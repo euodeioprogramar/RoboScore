@@ -3,12 +3,11 @@ from flask import Flask, render_template_string, request, redirect, url_for, ses
 app = Flask(__name__)
 
 # Chave secreta necessária para usar session.
-# Em produção o ideal é usar uma variável de ambiente, mas aqui vamos fixar uma.
 app.secret_key = "uma_chave_beeem_secreta_e_grande_aqui"
 
 
 # ==============================
-# FUNÇÃO DE PONTUAÇÃO (ATUALIZADA)
+# FUNÇÃO DE PONTUAÇÃO
 # ==============================
 
 def pontuacao_campos(dados):
@@ -70,9 +69,9 @@ def pontuacao_campos(dados):
     else:
         lad_cheg = 0
 
-    # -------- VÍTIMAS (somente certas) --------
+    # -------- VÍTIMAS --------
 
-    # Vítimas vivas
+    # Vítimas vivas (no lugar certo)
     vivas = int(dados.get('vit_viv', 0))
     if vivas == 1:
         vivas = 1.3
@@ -81,7 +80,7 @@ def pontuacao_campos(dados):
     else:
         vivas = 0
 
-    # Vítima morta
+    # Vítima morta (no lugar certo)
     morta = int(dados.get('vit_morta', 0))
     morta = 1.3 if morta == 1 else 0
 
@@ -112,7 +111,7 @@ def pontuacao_campos(dados):
 
 
 # ==============================
-# FUNÇÕES AUXILIARES DE ESTADO (POR USUÁRIO)
+# ESTADO POR USUÁRIO (SESSION)
 # ==============================
 
 def get_state():
@@ -145,6 +144,7 @@ TEMPLATE = """
         button { padding:8px 15px; border:none; background:#2563eb; color:white; border-radius:8px; cursor:pointer; margin-top:10px; }
         table { width:100%; border-collapse:collapse; margin-top:10px; }
         th, td { border:1px solid #1f2937; padding:6px; text-align:left; }
+        .actions { display:flex; gap:10px; flex-wrap:wrap; }
     </style>
 </head>
 <body>
@@ -152,12 +152,18 @@ TEMPLATE = """
 <h1>RoboScore – Sistema de Pontuação</h1>
 
 <div class="card">
-    <h2>Adicionar Equipe</h2>
-    <form method="POST" action="{{ url_for('adicionar_equipe') }}">
-        <label>Nome da equipe:</label>
-        <input type="text" name="nome_equipe" required>
-        <button>Adicionar</button>
-    </form>
+    <h2>Gerenciar competição</h2>
+    <div class="actions">
+        <form method="POST" action="{{ url_for('adicionar_equipe') }}">
+            <label>Nome da equipe:</label>
+            <input type="text" name="nome_equipe" required>
+            <button>Adicionar equipe</button>
+        </form>
+
+        <form method="POST" action="{{ url_for('reset') }}">
+            <button type="submit">Nova competição (limpar tudo)</button>
+        </form>
+    </div>
 
     <p>
     <strong>Equipes cadastradas:</strong>
@@ -210,9 +216,9 @@ TEMPLATE = """
 
         <label>Tentativa:</label>
         <select name="tent_prim">
-            <option value="1">1ª Tentativa</option>
-            <option value="2">2ª Tentativa</option>
-            <option value="3">3ª Tentativa</option>
+            <option value="1">1ª (×5)</option>
+            <option value="2">2ª (×3)</option>
+            <option value="3">3ª (×1)</option>
             <option value="4">Não superou</option>
         </select>
 
@@ -221,9 +227,9 @@ TEMPLATE = """
 
         <label>Tentativa:</label>
         <select name="tent_seg">
-            <option value="1">1ª Tentativa</option>
-            <option value="2">2ª Tentativa</option>
-            <option value="3">3ª Tentativa</option>
+            <option value="1">1ª (×5)</option>
+            <option value="2">2ª (×3)</option>
+            <option value="3">3ª (×1)</option>
             <option value="4">Não superou</option>
         </select>
 
@@ -232,9 +238,9 @@ TEMPLATE = """
 
         <label>Tentativa:</label>
         <select name="tent_ter">
-            <option value="1">1ª Tentativa</option>
-            <option value="2">2ª Tentativa</option>
-            <option value="3">3ª Tentativa</option>
+            <option value="1">1ª (×5)</option>
+            <option value="2">2ª (×3)</option>
+            <option value="3">3ª (×1)</option>
             <option value="4">Não superou</option>
         </select>
 
@@ -332,7 +338,7 @@ TEMPLATE = """
 
 
 # ==============================
-# ROTAS FLASK
+# ROTAS
 # ==============================
 
 @app.route("/")
@@ -412,8 +418,15 @@ def registrar_round():
     )
 
 
+@app.route("/reset", methods=["POST"])
+def reset():
+    """Apaga todos os dados da sessão deste usuário."""
+    session.clear()
+    return redirect(url_for("index"))
+
+
 # ==============================
-# EXECUÇÃO (Render usa gunicorn)
+# EXECUÇÃO LOCAL (Render usa gunicorn)
 # ==============================
 
 if __name__ == "__main__":
