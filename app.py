@@ -216,9 +216,9 @@ TEMPLATE = """
 
         <label>Tentativa:</label>
         <select name="tent_prim">
-            <option value="1">1ª (×5)</option>
-            <option value="2">2ª (×3)</option>
-            <option value="3">3ª (×1)</option>
+            <option value="1">1ª Tentativa</option>
+            <option value="2">2ª Tentativa</option>
+            <option value="3">3ª Tentativa</option>
             <option value="4">Não superou</option>
         </select>
 
@@ -227,9 +227,9 @@ TEMPLATE = """
 
         <label>Tentativa:</label>
         <select name="tent_seg">
-            <option value="1">1ª (×5)</option>
-            <option value="2">2ª (×3)</option>
-            <option value="3">3ª (×1)</option>
+            <option value="1">1ª Tentativa</option>
+            <option value="2">2ª Tentativa</option>
+            <option value="3">3ª Tentativa</option>
             <option value="4">Não superou</option>
         </select>
 
@@ -238,9 +238,9 @@ TEMPLATE = """
 
         <label>Tentativa:</label>
         <select name="tent_ter">
-            <option value="1">1ª (×5)</option>
-            <option value="2">2ª (×3)</option>
-            <option value="3">3ª (×1)</option>
+            <option value="1">1ª Tentativa</option>
+            <option value="2">2ª Tentativa</option>
+            <option value="3">3ª Tentativa</option>
             <option value="4">Não superou</option>
         </select>
 
@@ -431,3 +431,4 @@ def reset():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0")
+
