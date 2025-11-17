@@ -3,7 +3,7 @@ from flask import Flask, render_template_string, request, redirect, url_for
 app = Flask(__name__)
 
 # ==============================
-# FUNÇÃO DE PONTUAÇÃO (MESMA LÓGICA DO SEU CÓDIGO ORIGINAL)
+# FUNÇÃO DE PONTUAÇÃO (ATUALIZADA)
 # ==============================
 
 def pontuacao_campos(dados):
@@ -65,44 +65,32 @@ def pontuacao_campos(dados):
     else:
         lad_cheg = 0
 
-    # -------- Vítimas --------
-    # vivas certas
-    viv_cer = int(dados.get('vit_viv_cer', 0))
-    if viv_cer == 1:
-        viv_cer = 1.3
-    elif viv_cer == 2:
-        viv_cer = 1.3 * 1.3
+    # -------- VÍTIMAS (somente certas) --------
+    
+    # Vítimas vivas
+    vivas = int(dados.get('vit_viv', 0))
+    if vivas == 1:
+        vivas = 1.3
+    elif vivas == 2:
+        vivas = 1.3 * 1.3
     else:
-        viv_cer = 0
+        vivas = 0
 
-    # vivas erradas
-    viv_err = int(dados.get('vit_viv_err', 0))
-    if viv_err == 1:
-        viv_err = 1.1
-    elif viv_err == 2:
-        viv_err = 1.1 * 1.1
-    else:
-        viv_err = 0
+    # Vítima morta
+    morta = int(dados.get('vit_morta', 0))
+    morta = 1.3 if morta == 1 else 0
 
-    # mortas certas
-    mor_cer = 1.3 if int(dados.get('vit_mor_cer', 0)) == 1 else 0
-
-    # mortas erradas
-    mor_err = 1.1 if int(dados.get('vit_mor_err', 0)) == 1 else 0
-
-    # -------- Desafio surpresa --------
+    # -------- DESAFIO SURPRESA --------
     ds = int(dados.get('desaf_sur', 2))
     ds = 1.5 if ds == 1 else 0
 
-    # -------- Multiplicador --------
-    if viv_cer > 0 and mor_cer > 0:
-        mult = viv_cer * mor_cer
-    elif viv_cer > 0 and mor_err > 0:
-        mult = viv_cer * mor_err
-    elif viv_err > 0 and mor_cer > 0:
-        mult = viv_err * mor_cer
-    elif viv_err > 0 and mor_err > 0:
-        mult = viv_err * mor_err
+    # -------- MULTIPLICADOR --------
+    if vivas > 0 and morta > 0:
+        mult = vivas * morta
+    elif vivas > 0:
+        mult = vivas
+    elif morta > 0:
+        mult = morta
     else:
         mult = 1
 
@@ -119,7 +107,7 @@ def pontuacao_campos(dados):
 
 
 # ==============================
-# BANCO DE DADOS
+# BANCO DE DADOS (EM MEMÓRIA)
 # ==============================
 
 equipes = []
@@ -127,7 +115,7 @@ pontos = {}  # equipe -> {round_1, round_2, round_3}
 
 
 # ==============================
-# TEMPLATE HTML CORRIGIDO
+# TEMPLATE HTML
 # ==============================
 
 TEMPLATE = """
@@ -147,10 +135,10 @@ TEMPLATE = """
 </head>
 <body>
 
-<h1>RoboScore</h1>
+<h1>RoboScore – Sistema de Pontuação</h1>
 
 <div class="card">
-    <h2>1. Adicionar Equipe</h2>
+    <h2>Adicionar Equipe</h2>
     <form method="POST" action="{{ url_for('adicionar_equipe') }}">
         <label>Nome da equipe:</label>
         <input type="text" name="nome_equipe" required>
@@ -168,7 +156,7 @@ TEMPLATE = """
 </div>
 
 <div class="card">
-    <h2>2. Registrar Round</h2>
+    <h2>Registrar Round</h2>
 
     <form method="POST" action="{{ url_for('registrar_round') }}">
 
@@ -209,7 +197,7 @@ TEMPLATE = """
         <label>Tentativa:</label>
         <select name="tent_prim">
             <option value="1">1ª Tentativa</option>
-            <option value="2">2ª Tentativa</option>
+            <option value="2">2ª Tentativa)</option>
             <option value="3">3ª Tentativa</option>
             <option value="4">Não superou</option>
         </select>
@@ -269,30 +257,17 @@ TEMPLATE = """
 
         <hr>
 
-        <h3>Multiplicadores</h3>
+        <h3>Vítimas</h3>
 
-        <label>Vivas no lugar certo:</label>
-        <select name="vit_viv_cer">
+        <label>Vítimas vivas:</label>
+        <select name="vit_viv">
             <option value="0">0</option>
             <option value="1">1</option>
             <option value="2">2</option>
         </select>
 
-        <label>Vivas no lugar errado:</label>
-        <select name="vit_viv_err">
-            <option value="0">0</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-        </select>
-
-        <label>Mortas no lugar certo:</label>
-        <select name="vit_mor_cer">
-            <option value="0">0</option>
-            <option value="1">1</option>
-        </select>
-
-        <label>Mortas no lugar errado:</label>
-        <select name="vit_mor_err">
+        <label>Vítima morta:</label>
+        <select name="vit_morta">
             <option value="0">0</option>
             <option value="1">1</option>
         </select>
@@ -343,7 +318,7 @@ TEMPLATE = """
 
 
 # ==============================
-# ROTAS DO FLASK
+# ROTAS FLASK
 # ==============================
 
 @app.route("/")
@@ -358,11 +333,13 @@ def index():
 
     ranking_ordenado = sorted(ranking, key=lambda x: x[1], reverse=True)
 
-    return render_template_string(TEMPLATE,
-                                  equipes=equipes,
-                                  pontos=pontos,
-                                  ranking_ordenado=ranking_ordenado,
-                                  msg_round=None)
+    return render_template_string(
+        TEMPLATE,
+        equipes=equipes,
+        pontos=pontos,
+        ranking_ordenado=ranking_ordenado,
+        msg_round=None
+    )
 
 
 @app.route("/adicionar_equipe", methods=["POST"])
@@ -402,12 +379,18 @@ def registrar_round():
 
     ranking_ordenado = sorted(ranking, key=lambda x: x[1], reverse=True)
 
-    return render_template_string(TEMPLATE,
-                                  equipes=equipes,
-                                  pontos=pontos,
-                                  ranking_ordenado=ranking_ordenado,
-                                  msg_round=msg)
+    return render_template_string(
+        TEMPLATE,
+        equipes=equipes,
+        pontos=pontos,
+        ranking_ordenado=ranking_ordenado,
+        msg_round=msg
+    )
 
+
+# ==============================
+# EXECUÇÃO (Render usa gunicorn)
+# ==============================
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0")
