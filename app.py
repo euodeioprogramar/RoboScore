@@ -1,6 +1,11 @@
-from flask import Flask, render_template_string, request, redirect, url_for
+from flask import Flask, render_template_string, request, redirect, url_for, session
 
 app = Flask(__name__)
+
+# Chave secreta necessária para usar session.
+# Em produção o ideal é usar uma variável de ambiente, mas aqui vamos fixar uma.
+app.secret_key = "uma_chave_beeem_secreta_e_grande_aqui"
+
 
 # ==============================
 # FUNÇÃO DE PONTUAÇÃO (ATUALIZADA)
@@ -66,7 +71,7 @@ def pontuacao_campos(dados):
         lad_cheg = 0
 
     # -------- VÍTIMAS (somente certas) --------
-    
+
     # Vítimas vivas
     vivas = int(dados.get('vit_viv', 0))
     if vivas == 1:
@@ -107,11 +112,20 @@ def pontuacao_campos(dados):
 
 
 # ==============================
-# BANCO DE DADOS (EM MEMÓRIA)
+# FUNÇÕES AUXILIARES DE ESTADO (POR USUÁRIO)
 # ==============================
 
-equipes = []
-pontos = {}  # equipe -> {round_1, round_2, round_3}
+def get_state():
+    """Pega equipes e pontos da sessão do usuário atual."""
+    equipes = session.get("equipes", [])
+    pontos = session.get("pontos", {})
+    return equipes, pontos
+
+
+def save_state(equipes, pontos):
+    """Salva equipes e pontos na sessão do usuário atual."""
+    session["equipes"] = equipes
+    session["pontos"] = pontos
 
 
 # ==============================
@@ -197,7 +211,7 @@ TEMPLATE = """
         <label>Tentativa:</label>
         <select name="tent_prim">
             <option value="1">1ª Tentativa</option>
-            <option value="2">2ª Tentativa)</option>
+            <option value="2">2ª Tentativa</option>
             <option value="3">3ª Tentativa</option>
             <option value="4">Não superou</option>
         </select>
@@ -323,6 +337,8 @@ TEMPLATE = """
 
 @app.route("/")
 def index():
+    equipes, pontos = get_state()
+
     ranking = []
     for e in equipes:
         r1 = pontos[e]["round_1"]
@@ -344,20 +360,26 @@ def index():
 
 @app.route("/adicionar_equipe", methods=["POST"])
 def adicionar_equipe():
-    nome = request.form.get("nome_equipe").strip()
+    equipes, pontos = get_state()
+
+    nome = request.form.get("nome_equipe", "").strip()
     if nome and nome not in equipes:
         equipes.append(nome)
         pontos[nome] = {"round_1": 0, "round_2": 0, "round_3": 0}
+
+    save_state(equipes, pontos)
     return redirect(url_for("index"))
 
 
 @app.route("/registrar_round", methods=["POST"])
 def registrar_round():
+    equipes, pontos = get_state()
+
     equipe = request.form.get("equipe")
     round_n = request.form.get("round")
-    realizou = int(request.form.get("realizou"))
+    realizou = int(request.form.get("realizou", 2))
 
-    if equipe not in equipes:
+    if not equipe or equipe not in equipes:
         msg = "Equipe inválida!"
     else:
         chave = f"round_{round_n}"
@@ -368,6 +390,8 @@ def registrar_round():
             total = pontuacao_campos(request.form.to_dict())
             pontos[equipe][chave] = total
             msg = f"{equipe} marcou {total} pontos no {chave}!"
+
+    save_state(equipes, pontos)
 
     ranking = []
     for e in equipes:
