@@ -3,7 +3,7 @@ from flask import Flask, render_template_string, request, redirect, url_for
 app = Flask(__name__)
 
 # ==============================
-# FUNÇÃO DE PONTUAÇÃO (atualizada)
+# FUNÇÃO DE PONTUAÇÃO (MESMA LÓGICA DO SEU CÓDIGO ORIGINAL)
 # ==============================
 
 def pontuacao_campos(dados):
@@ -65,35 +65,44 @@ def pontuacao_campos(dados):
     else:
         lad_cheg = 0
 
-    # -------- VÍTIMAS (apenas certas) --------
-
-    # VÍTIMAS VIVAS
-    vivas = int(dados.get('vit_viv', 0))
-    if vivas == 1:
-        vivas = 1.3
-    elif vivas == 2:
-        vivas = 1.3 * 1.3
+    # -------- Vítimas --------
+    # vivas certas
+    viv_cer = int(dados.get('vit_viv_cer', 0))
+    if viv_cer == 1:
+        viv_cer = 1.3
+    elif viv_cer == 2:
+        viv_cer = 1.3 * 1.3
     else:
-        vivas = 0
+        viv_cer = 0
 
-    # VÍTIMA MORTA
-    morta = int(dados.get('vit_morta', 0))
-    if morta == 1:
-        morta = 1.3
+    # vivas erradas
+    viv_err = int(dados.get('vit_viv_err', 0))
+    if viv_err == 1:
+        viv_err = 1.1
+    elif viv_err == 2:
+        viv_err = 1.1 * 1.1
     else:
-        morta = 0
+        viv_err = 0
 
-    # -------- DESAFIO SURPRESA --------
+    # mortas certas
+    mor_cer = 1.3 if int(dados.get('vit_mor_cer', 0)) == 1 else 0
+
+    # mortas erradas
+    mor_err = 1.1 if int(dados.get('vit_mor_err', 0)) == 1 else 0
+
+    # -------- Desafio surpresa --------
     ds = int(dados.get('desaf_sur', 2))
     ds = 1.5 if ds == 1 else 0
 
-    # -------- MULTIPLICADOR --------
-    if vivas > 0 and morta > 0:
-        mult = vivas * morta
-    elif vivas > 0:
-        mult = vivas
-    elif morta > 0:
-        mult = morta
+    # -------- Multiplicador --------
+    if viv_cer > 0 and mor_cer > 0:
+        mult = viv_cer * mor_cer
+    elif viv_cer > 0 and mor_err > 0:
+        mult = viv_cer * mor_err
+    elif viv_err > 0 and mor_cer > 0:
+        mult = viv_err * mor_cer
+    elif viv_err > 0 and mor_err > 0:
+        mult = viv_err * mor_err
     else:
         mult = 1
 
@@ -114,11 +123,11 @@ def pontuacao_campos(dados):
 # ==============================
 
 equipes = []
-pontos = {}  # equipe -> { round_1, round_2, round_3 }
+pontos = {}  # equipe -> {round_1, round_2, round_3}
 
 
 # ==============================
-# TEMPLATE HTML ATUALIZADO
+# TEMPLATE HTML CORRIGIDO
 # ==============================
 
 TEMPLATE = """
@@ -138,7 +147,7 @@ TEMPLATE = """
 </head>
 <body>
 
-<h1>RoboScore – Sistema de Pontuação</h1>
+<h1>RoboScore</h1>
 
 <div class="card">
     <h2>1. Adicionar Equipe</h2>
@@ -262,15 +271,28 @@ TEMPLATE = """
 
         <h3>Multiplicadores</h3>
 
-        <label>Vítimas vivas (no lugar certo):</label>
-        <select name="vit_viv">
+        <label>Vivas no lugar certo:</label>
+        <select name="vit_viv_cer">
             <option value="0">0</option>
             <option value="1">1</option>
             <option value="2">2</option>
         </select>
 
-        <label>Vítima morta (no lugar certo):</label>
-        <select name="vit_morta">
+        <label>Vivas no lugar errado:</label>
+        <select name="vit_viv_err">
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+        </select>
+
+        <label>Mortas no lugar certo:</label>
+        <select name="vit_mor_cer">
+            <option value="0">0</option>
+            <option value="1">1</option>
+        </select>
+
+        <label>Mortas no lugar errado:</label>
+        <select name="vit_mor_err">
             <option value="0">0</option>
             <option value="1">1</option>
         </select>
@@ -321,7 +343,7 @@ TEMPLATE = """
 
 
 # ==============================
-# ROTAS FLASK
+# ROTAS DO FLASK
 # ==============================
 
 @app.route("/")
@@ -373,7 +395,7 @@ def registrar_round():
     ranking = []
     for e in equipes:
         r1 = pontos[e]["round_1"]
-        r2 = pontos[e]["round_round_2"] if "round_2" in pontos[e] else pontos[e]["round_2"]
+        r2 = pontos[e]["round_2"]
         r3 = pontos[e]["round_3"]
         melhor2 = sum(sorted([r1, r2, r3], reverse=True)[:2])
         ranking.append((e, melhor2))
@@ -387,6 +409,5 @@ def registrar_round():
                                   msg_round=msg)
 
 
-# Para Render:
 if __name__ == "__main__":
-    app.run(host="0.0.0.0")
+    app.run(debug=True)
