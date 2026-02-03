@@ -178,7 +178,7 @@ def registrar_round():
     if not equipe or equipe not in equipes:
         msg = "Equipe inválida!"
     else:
-        chave = f"{round_n}° round"
+        chave = f"round_{round_n}"
         if realizou == 2:
             pontos[equipe][chave] = 0
             msg = f"{equipe} não realizou o round. Pontuação = 0."
@@ -191,9 +191,9 @@ def registrar_round():
 
     ranking = []
     for e in equipes:
-        r1 = pontos[e]["1° round"]
-        r2 = pontos[e]["2° round"]
-        r3 = pontos[e]["3° round"]
+        r1 = pontos[e]["round_1"]
+        r2 = pontos[e]["round_2"]
+        r3 = pontos[e]["round_3"]
         melhor2 = sum(sorted([r1, r2, r3], reverse=True)[:2])
         ranking.append((e, melhor2))
 
