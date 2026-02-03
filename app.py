@@ -178,7 +178,7 @@ def registrar_round():
     if not equipe or equipe not in equipes:
         msg = "Equipe inválida!"
     else:
-        chave = f"round_{round_n}"
+        chave = f"{round_n}° round"
         if realizou == 2:
             pontos[equipe][chave] = 0
             msg = f"{equipe} não realizou o round. Pontuação = 0."
