@@ -191,9 +191,9 @@ def registrar_round():
 
     ranking = []
     for e in equipes:
-        r1 = pontos[e]["round_1"]
-        r2 = pontos[e]["round_2"]
-        r3 = pontos[e]["round_3"]
+        r1 = pontos[e]["1° round"]
+        r2 = pontos[e]["2° round"]
+        r3 = pontos[e]["3° round"]
         melhor2 = sum(sorted([r1, r2, r3], reverse=True)[:2])
         ranking.append((e, melhor2))
 
